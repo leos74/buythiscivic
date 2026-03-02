@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Car For Sale</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── VARIABLES ─────────────────────────────────────────── */
+    :root {
+      --red:        #e80e0e;
+      --red-dark:   #b50b0b;
+      --red-glow:   rgba(232,14,14,0.22);
+      --bg:         #0c0c0c;
+      --bg-card:    #141414;
+      --bg-hi:      #1c1c1c;
+      --border:     rgba(255,255,255,0.07);
+      --text:       #f0f0f0;
+      --text-sub:   #d3d3d3;
+      --text-muted: #c0c0c0;
+      --r:          12px;
+      --r-lg:       18px;
+      --sp:         16px;
+      --max-w:      480px;
+      --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-out:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --f-display:  'Bebas Neue', cursive;
+      --f-cond:     'Barlow Condensed', sans-serif;
+      --f-body:     'Barlow', sans-serif;
+    }
+
+    /* ── RESET ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse 80% 45% at 50% -10%, rgba(232,14,14,0.13) 0%, transparent 65%),
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 39px,
+          rgba(255,255,255,0.015) 39px,
+          rgba(255,255,255,0.015) 40px
+        );
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: var(--f-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .page-wrapper {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding-bottom: 56px;
+    }
+
+    /* ── PERSISTENT ANIMATIONS (keyframes) ─────────────────── */
+    @keyframes shimmer { from{background-position:200% 0} to{background-position:-200% 0} }
+    @keyframes pulse   {
+      0%,100%{box-shadow:0 0 0 0 var(--red-glow)}
+      50%    {box-shadow:0 0 28px 10px var(--red-glow)}
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       SCROLL REVEAL SYSTEM
+       All sections start hidden. IntersectionObserver
+       adds .in-view when the element enters the viewport.
+    ══════════════════════════════════════════════════════════ */
+
+    /* 1 · FADE + SCALE  (carousel) */
+    .reveal-scale {
+      opacity: 0;
+      transform: scale(0.93) translateY(24px);
+      transition:
+        opacity   1s   var(--ease-spring),
+        transform 1.1s var(--ease-spring);
+    }
+    .reveal-scale.in-view {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    /* 2 · SLIDE UP  (header, seller, map) */
+    .reveal-up {
+      opacity: 0;
+      transform: translateY(64px);
+      transition:
+        opacity   0.9s var(--ease-spring),
+        transform 0.9s var(--ease-spring);
+    }
+    .reveal-up.in-view {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* 3 · SLIDE FROM LEFT  (description) */
+    .reveal-left {
+      opacity: 0;
+      transform: translateX(-56px);
+      transition:
+        opacity   0.85s var(--ease-spring),
+        transform 0.9s  var(--ease-spring);
+    }
+    .reveal-left.in-view {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* 4 · SCALE POP  (CTA button section) */
+    .reveal-pop {
+      opacity: 0;
+      transform: scale(0.85) translateY(32px);
+      transition:
+        opacity   0.7s var(--ease-spring),
+        transform 0.8s var(--ease-spring);
+    }
+    .reveal-pop.in-view {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    /* 5 · SPECS SECTION — slides up as a block */
+    .reveal-specs {
+      opacity: 0;
+      transform: translateY(50px);
+      transition:
+        opacity   0.8s var(--ease-spring),
+        transform 0.8s var(--ease-spring);
+    }
+    .reveal-specs.in-view { opacity: 1; transform: translateY(0); }
+
+    /* Individual spec cells stagger when parent has .in-view */
+    .spec-cell {
+      opacity: 0;
+      transform: translateY(36px) scale(0.96);
+      transition:
+        opacity   0.65s var(--ease-spring),
+        transform 0.65s var(--ease-spring);
+    }
+    .reveal-specs.in-view .spec-cell:nth-child(1) { transition-delay: 0.10s; opacity:1; transform:none; }
+    .reveal-specs.in-view .spec-cell:nth-child(2) { transition-delay: 0.20s; opacity:1; transform:none; }
+    .reveal-specs.in-view .spec-cell:nth-child(3) { transition-delay: 0.30s; opacity:1; transform:none; }
+    .reveal-specs.in-view .spec-cell:nth-child(4) { transition-delay: 0.40s; opacity:1; transform:none; }
+    /* extend for cells 5–8 if needed */
+    .reveal-specs.in-view .spec-cell:nth-child(5) { transition-delay: 0.50s; opacity:1; transform:none; }
+    .reveal-specs.in-view .spec-cell:nth-child(6) { transition-delay: 0.60s; opacity:1; transform:none; }
+
+    /* Header children stagger */
+    .listing-header .car-title,
+    .listing-header .price-row,
+    .listing-header .location-row {
+      opacity: 0;
+      transform: translateY(28px);
+      transition:
+        opacity   0.7s var(--ease-spring),
+        transform 0.75s var(--ease-spring);
+    }
+    .listing-header.in-view .car-title    { opacity:1; transform:none; transition-delay: 0.0s; }
+    .listing-header.in-view .price-row    { opacity:1; transform:none; transition-delay: 0.12s; }
+    .listing-header.in-view .location-row { opacity:1; transform:none; transition-delay: 0.22s; }
+
+    /* Seller card children stagger */
+    .seller-card .seller-avatar,
+    .seller-card .seller-info,
+    .seller-card .seller-badge {
+      opacity: 0;
+      transform: translateY(20px);
+      transition:
+        opacity   0.65s var(--ease-spring),
+        transform 0.65s var(--ease-spring);
+    }
+    .reveal-up.in-view .seller-avatar { opacity:1; transform:none; transition-delay: 0.05s; }
+    .reveal-up.in-view .seller-info   { opacity:1; transform:none; transition-delay: 0.15s; }
+    .reveal-up.in-view .seller-badge  { opacity:1; transform:none; transition-delay: 0.25s; }
+
+    /* ── CAROUSEL ──────────────────────────────────────────── */
+    .carousel-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1/1;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .c-track {
+      display: flex;
+      height: 100%;
+      transition: transform .36s cubic-bezier(.77,0,.175,1);
+      will-change: transform;
+    }
+
+    .c-slide {
+      flex: 0 0 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .c-slide img,
+    .c-slide video {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+
+    .c-slide:first-child::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        transparent, transparent 2px,
+        rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px
+      );
+      pointer-events: none;
+    }
+
+    .unmute-btn {
+      position: absolute; bottom: 14px; right: 14px; z-index: 10;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: #fff; border-radius: 50%;
+      width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 14px;
+      backdrop-filter: blur(6px);
+      transition: background .2s, border-color .2s;
+    }
+    .unmute-btn:hover { background: var(--red); border-color: var(--red); }
+
+    .c-btn {
+      position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+      background: rgba(0,0,0,0.5);
+      border: none; color: #fff;
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 13px;
+      backdrop-filter: blur(4px);
+      transition: background .2s;
+    }
+    .c-btn:hover { background: var(--red); }
+    .c-btn.prev  { left: 12px; }
+    .c-btn.next  { right: 12px; }
+
+    .c-dots {
+      position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 6px; z-index: 10;
+    }
+    .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,0.3); cursor: pointer;
+      border: none;
+      transition: background .2s, transform .2s;
+    }
+    .dot.active { background: var(--red); transform: scale(1.45); }
+
+    .slide-count {
+      position: absolute; top: 14px; right: 14px;
+      background: rgba(0,0,0,0.58); color: #fff;
+      font-family: var(--f-cond); font-size: 13px; letter-spacing: .5px;
+      padding: 3px 10px; border-radius: 20px;
+      backdrop-filter: blur(4px); z-index: 10;
+    }
+
+    .accent-bar {
+      height: 3px;
+      background: linear-gradient(90deg, var(--red), #ff5555, var(--red));
+      background-size: 200% 100%;
+      animation: shimmer 2.2s linear infinite;
+    }
+
+    /* ── LISTING HEADER ────────────────────────────────────── */
+    .listing-header {
+      padding: 20px var(--sp) 16px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .car-title {
+      font-family: var(--f-display);
+      font-size: 38px; letter-spacing: 1.5px; line-height: 1;
+      color: var(--text); text-transform: uppercase; margin-bottom: 10px;
+    }
+
+    .price-row {
+      display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px;
+    }
+    .price {
+      font-family: var(--f-cond); font-size: 34px; font-weight: 700;
+      color: var(--red); letter-spacing: -.5px;
+    }
+    .price-note { font-size: 18px; color: var(--text-muted); font-weight: 300; }
+
+    .location-row {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--text-sub); font-size: 18px;
+    }
+    .location-row i { color: var(--red); font-size: 12px; }
+
+    /* ── DIVIDER ───────────────────────────────────────────── */
+    .divider {
+      height: 8px;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── SPECS GRID ────────────────────────────────────────── */
+    .specs-section { padding: var(--sp); background: var(--bg); }
+
+    .section-label {
+      font-family: var(--f-cond);
+      font-size: 18px; font-weight: 600;
+      letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 12px;
+    }
+
+    .specs-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1px; background: var(--border);
+      border-radius: var(--r); overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .spec-cell {
+      background: var(--bg-card);
+      padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+
+    .spec-label {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 14px; font-weight: 600;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .spec-label i { color: var(--red); font-size: 11px; width: 12px; }
+
+    .spec-value {
+      font-family: var(--f-cond);
+      font-size: 24px; font-weight: 600;
+      color: var(--text); letter-spacing: .3px;
+      padding-left: 19px;
+    }
+
+    /* ── DESCRIPTION ───────────────────────────────────────── */
+    .desc-section { padding: var(--sp); background: var(--bg); }
+
+    .desc-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 16px;
+      position: relative; overflow: hidden;
+    }
+    .desc-card::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--red), var(--red-dark));
+    }
+    .desc-card p {
+      font-size: 16px; line-height: 1.72;
+      color: var(--text-sub); font-weight: 300;
+      padding-left: 14px;
+    }
+
+    /* ── CTA ───────────────────────────────────────────────── */
+    .cta-section { padding: var(--sp) var(--sp); background: var(--bg); }
+
+    .cta-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; padding: 17px 20px;
+      background: linear-gradient(135deg, var(--red) 0%, #ff3a3a 50%, var(--red-dark) 100%);
+      color: #fff; text-decoration: none;
+      border-radius: var(--r);
+      font-family: var(--f-cond);
+      font-size: 24px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      border: none; cursor: pointer;
+      animation: pulse 3s ease-in-out infinite;
+      transition: transform .15s, box-shadow .3s;
+      position: relative; overflow: hidden;
+    }
+    .cta-btn::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.09) 0%, transparent 55%);
+      pointer-events: none;
+    }
+    .cta-btn:hover  { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(232,14,14,.5); }
+    .cta-btn:active { transform: translateY(0); }
+    .cta-btn i { font-size: 20px; }
+
+    /* ── SELLER ────────────────────────────────────────────── */
+    .seller-section { padding: var(--sp); background: var(--bg); }
+
+    .seller-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 16px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .seller-avatar {
+      width: 80px; height: 80px;
+      border-radius: 50%; object-fit: cover;
+      border: 2px solid var(--red); flex-shrink: 0;
+    }
+    .seller-info { flex: 1; }
+    .seller-name {
+      font-family: var(--f-cond);
+      font-size: 24px; font-weight: 600;
+      color: var(--text); letter-spacing: .3px;
+    }
+    .seller-meta {
+      font-size: 16px; color: var(--text-muted);
+      margin-top: 3px;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .seller-meta i { color: var(--red); font-size: 11px; }
+    .seller-badge {
+      background: rgba(232,14,14,0.1);
+      border: 1px solid rgba(232,14,14,0.28);
+      color: var(--red);
+      font-family: var(--f-cond);
+      font-size: 16 px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 20px;
+    }
+
+    /* ── MAP (updated) ─────────────────────────────────────── */
+.map-section { padding: var(--sp); background: var(--bg); }
+
+.map-wrap {
+  position: relative;
+  width: 100%;
+  padding-bottom: 58%;   /* fluid ~16:9-ish height on any screen */
+  height: 0;
+  border-radius: var(--r);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.map-wrap::after {
+  content: '';
+  position: absolute; inset: 0; border-radius: var(--r);
+  border: 1px solid rgba(232,14,14,0.2);
+  pointer-events: none; z-index: 1;
+}
+.gmap_iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  border: none;
+  filter: grayscale(.25) contrast(1.05);
+}
+
+    /* ── DESKTOP PADDING ───────────────────────────────────── */
+    @media (min-width: 481px) {
+      .page-wrapper { padding-top: 28px; }
+      .carousel-wrap { border-radius: var(--r-lg) var(--r-lg) 0 0; }
+    }
+
+    /* ── REDUCE MOTION PREFERENCE ──────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      .reveal-scale, .reveal-up, .reveal-left, .reveal-pop, .reveal-specs,
+      .spec-cell,
+      .listing-header .car-title,
+      .listing-header .price-row,
+      .listing-header .location-row,
+      .seller-card .seller-avatar,
+      .seller-card .seller-info,
+      .seller-card .seller-badge {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- 1 · CAROUSEL -->
+  <section class="carousel-wrap reveal-scale" aria-label="Listing media">
+    <div class="c-track" id="cTrack">
+
+      <!-- Slide 1: Video -->
+      <div class="c-slide">
+        <video
+          id="cVideo"
+          src="img/video.mov"
+          autoplay muted loop playsinline preload="metadata"
+          aria-label="Listing walkthrough video"
+        ></video>
+        <button class="unmute-btn" id="unmuteBtn" aria-label="Toggle mute">
+          <i class="fa-solid fa-volume-xmark" id="muteIcon"></i>
+        </button>
+      </div>
+
+      <!-- Slides 2–10: Photos -->
+      <div class="c-slide"><img src="img/img1.jpg" alt="Car photo 1" loading="lazy"></div>
+      <div class="c-slide"><img src="img/img2.jpg" alt="Car photo 2" loading="lazy"></div>
+      <div class="c-slide"><img src="img/img3.jpg" alt="Car photo 3" loading="lazy"></div>
+      <div class="c-slide"><img src="img/img4.jpg" alt="Car photo 4" loading="lazy"></div>
+      <div class="c-slide"><img src="img/img5.jpg" alt="Car photo 5" loading="lazy"></div>
+      <div class="c-slide"><img src="img/img6.jpg" alt="Car photo 6" loading="lazy"></div>
+      <div class="c-slide"><img src="img/img7.jpg" alt="Car photo 7" loading="lazy"></div>
+      <div class="c-slide"><img src="img/img8.jpg" alt="Car photo 8" loading="lazy"></div>
+      <div class="c-slide"><img src="img/img9.jpg" alt="Car photo 9" loading="lazy"></div>
+      <div class="c-slide"><img src="img/img10.jpg" alt="Car photo 10" loading="lazy"></div>
+
+    </div>
+
+    <div class="slide-count" id="slideCount">1 / 11</div>
+
+    <button class="c-btn prev" id="prevBtn" aria-label="Previous slide">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+    <button class="c-btn next" id="nextBtn" aria-label="Next slide">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+
+    <div class="c-dots" id="cDots" role="tablist"></div>
+  </section>
+
+  <div class="accent-bar"></div>
+
+  <!-- 2 · LISTING HEADER -->
+  <section class="listing-header reveal-up" aria-label="Listing details">
+    <h1 class="car-title">1998 Honda Civic</h1>
+    <div class="price-row">
+      <span class="price">7000$</span>
+      <span class="price-note">négociable</span>
+    </div>
+    <div class="location-row">
+      <i class="fa-solid fa-location-dot"></i>
+      <span>Saint-Hubert, QC</span>
+    </div>
+  </section>
+
+    <div class="divider"></div>
+
+   <!-- CTA -->
+  <section class="cta-section reveal-pop" aria-label="Contact seller">
+    <a
+      href="https://facebook.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="cta-btn"
+      aria-label="Me contacter sur Marketplace"
+    >
+      <i class="fa-brands fa-facebook"></i>
+      Me contacter sur Marketplace
+    </a>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 3 · SPECS GRID -->
+  <section class="specs-section reveal-specs" aria-label="Vehicle specifications">
+    <p class="section-label">Détails</p>
+    <div class="specs-grid">
+      <div class="spec-cell">
+        <span class="spec-label"><i class="fa-solid fa-gauge-high"></i>Mileage</span>
+        <span class="spec-value">69000 km</span>
+      </div>
+      <div class="spec-cell">
+        <span class="spec-label"><i class="fa-solid fa-palette"></i>Couleur</span>
+        <span class="spec-value">Milano Red</span>
+      </div>
+      <div class="spec-cell">
+        <span class="spec-label"><i class="fa-solid fa-gears"></i>Transmission</span>
+        <span class="spec-value">Manuelle</span>
+      </div>
+      <div class="spec-cell">
+        <span class="spec-label"><i class="fa-solid fa-star"></i>Condition</span>
+        <span class="spec-value">Comme neuve!</span>
+      </div>
+      <!-- Add more spec-cell blocks as needed -->
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 4 · DESCRIPTION -->
+  <section class="desc-section reveal-left" aria-label="Vehicle description">
+    <p class="section-label">À propos de ce bolide</p>
+    <div class="desc-card">
+      <p>Civic bien maintenue au fil du temps, restauration majeure effectuée cet hiver - toute la rouille a été éliminée.</p>
+      <p>Mécanique A1</p>
+      <p>Peinture refaite en 2014</p>
+      <br>
+       <p>Coilovers Maxpeedingrods</p>
+        <p>99% des bushings remplacés par des nouveaux en eurethane</p>
+      
+         <p>Timing belt faite il y a moins de 10000km</p>
+         <p>Clutch performance installée récemment aussi</p> 
+    </div>
+  </section>
+
+
+  <div class="divider"></div>
+
+  <!-- 6 · SELLER -->
+  <section class="seller-section reveal-up" aria-label="Seller information">
+    <p class="section-label">À propos du vendeur</p>
+    <div class="seller-card">
+      <img src="img/pfp.jpg" alt="Seller profile photo" class="seller-avatar">
+      <div class="seller-info">
+        <div class="seller-name">Leos</div>
+        <div class="seller-meta">
+          <i class="fa-solid fa-clock"></i>
+          C'est moi!
+        </div>
+      </div>
+      <span class="seller-badge">Saint-Hubert</span>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 7 · MAP -->
+<section class="map-section reveal-up" aria-label="Seller location">
+  <p class="section-label">Localisation</p>
+  <div class="map-wrap">
+    <iframe
+      class="gmap_iframe"
+      frameborder="0"
+      scrolling="no"
+      marginheight="0"
+      marginwidth="0"
+      src="https://maps.google.com/maps?width=480&height=280&hl=en&q=Saint-hubert%2C+Quebec&t=&z=14&ie=UTF8&iwloc=B&output=embed"
+      title="Seller location map"
+      loading="lazy"
+      allowfullscreen
+      referrerpolicy="no-referrer-when-downgrade"
+    ></iframe>
+  </div>
+</section>
+
+
+</div><!-- /page-wrapper -->
+
+<script>
+  /* ── INTERSECTION OBSERVER — scroll-triggered reveals ── */
+  const REVEAL_SELECTORS = [
+    '.reveal-scale',
+    '.reveal-up',
+    '.reveal-left',
+    '.reveal-pop',
+    '.reveal-specs',
+  ];
+
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        revealObserver.unobserve(entry.target); // fire once only
+      }
+    });
+  }, {
+    threshold: 0.12,       // trigger when 12% of element is visible
+    rootMargin: '0px 0px -40px 0px' // offset so it fires slightly before edge
+  });
+
+  document.querySelectorAll(REVEAL_SELECTORS.join(', ')).forEach(el => {
+    revealObserver.observe(el);
+  });
+
+  /* ── CAROUSEL ── */
+  const track     = document.getElementById('cTrack');
+  const slides    = track.querySelectorAll('.c-slide');
+  const dotsWrap  = document.getElementById('cDots');
+  const countEl   = document.getElementById('slideCount');
+  const video     = document.getElementById('cVideo');
+  const unmuteBtn = document.getElementById('unmuteBtn');
+  const muteIcon  = document.getElementById('muteIcon');
+  const total = slides.length;
+  let cur = 0;
+
+  slides.forEach((_, i) => {
+    const d = document.createElement('button');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.setAttribute('role', 'tab');
+    d.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    d.addEventListener('click', () => goTo(i));
+    dotsWrap.appendChild(d);
+  });
+
+  function goTo(idx) {
+    cur = (idx + total) % total;
+    track.style.transform = 'translateX(-' + (cur * 100) + '%)';
+    document.querySelectorAll('.dot').forEach((d, i) =>
+      d.classList.toggle('active', i === cur)
+    );
+    countEl.textContent = (cur + 1) + ' / ' + total;
+    if (cur === 0) { video.play().catch(() => {}); } else { video.pause(); }
+  }
+
+  document.getElementById('prevBtn').addEventListener('click', () => goTo(cur - 1));
+  document.getElementById('nextBtn').addEventListener('click', () => goTo(cur + 1));
+
+  let tx = 0;
+  track.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+  track.addEventListener('touchend',   e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 40) goTo(cur + (dx < 0 ? 1 : -1));
+  });
+
+  unmuteBtn.addEventListener('click', () => {
+    video.muted = !video.muted;
+    muteIcon.className = video.muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+  });
+
+  goTo(0);
+</script>
+
+</body>
+</html>
